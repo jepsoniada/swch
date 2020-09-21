@@ -11,11 +11,32 @@ import  (
 	"regexp"
 )
 
-type simplifiedFile struct {
-	line,
-	task,
-	content string
-	numOfLine int
+//type SimplifiedLine struct {
+//	line,
+//	task,
+//	content string
+//	numOfLine int
+//}
+
+type SimplifiedLine struct {
+	content string 
+}
+
+type simfileinfos interface {
+	task() string
+	line() string
+}
+
+func (sf SimplifiedLine) task() string {
+	check, _ := regexp.Compile("^-(a|n)")
+	typeOfTask := check.FindStringSubmatch(sf.content)
+	return string(typeOfTask[1])
+}
+
+func (sf SimplifiedLine) line() string {
+	check, _ := regexp.Compile(" :: (.*)")
+	line := check.FindStringSubmatch(sf.content)
+	return line[1]
 }
 
 func main() {
@@ -118,15 +139,15 @@ func swch (fileName string) {
 	nlCheck, _ := regexp.Compile("\n")
 	listOfNls := nlCheck.FindAllStringSubmatchIndex(string(byt), -1)
 	fmt.Println(len(listOfNls))
-	linesOfDocument := make(map[int]string)
+	linesOfDocument := make(map[int]SimplifiedLine)
 	for i, a := range listOfNls {
 		if i < 1 {
-			linesOfDocument[i] = string(byt)[:a[0]]
+			linesOfDocument[i] = SimplifiedLine{string(byt)[:a[0]]}
 		} else {
-			linesOfDocument[i] = string(byt)[listOfNls[i-1][1]:a[0]]
+			linesOfDocument[i] = SimplifiedLine{string(byt)[listOfNls[i-1][1]:a[0]]}
 		}
 		if i == len(listOfNls)-1 {
-			linesOfDocument[i+1] = string(byt)[a[1]:]
+			linesOfDocument[i+1] = SimplifiedLine{string(byt)[a[1]:]}
 		}
 	}
 	// commandCheck, _ := regexp.Compile("^(-n|-a)")
