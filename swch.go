@@ -10,6 +10,14 @@ import  (
 	"path/filepath" 
 	"regexp"
 )
+
+type simplifiedFile struct {
+	line,
+	task,
+	content string
+	numOfLine int
+}
+
 func main() {
 	args := os.Args[1:]
 	fmt.Println(args) 
@@ -105,14 +113,28 @@ func swch (fileName string) {
 	byt := make([]byte, qwei.Size())
 	qwe.Read(byt)
 	fmt.Printf("%s", string(byt))
-	//lineCheck, _ := regexp.Compile("^(-n|-a) \d* :: .*")
-	//commandIndexes, _ := lineCheck.FindAllString(byt, -1)
-	commandCheck, _ := regexp.Compile("^(-n|-a)")
-	byCommand := commandCheck.FindAll(byt, -1)
-	fmt.Println(len(byCommand))
-	for _, a := range byCommand {
-		fmt.Println(a)
+	// lineCheck, _ := regexp.Compile(`^(-n|-a) \d* :: .*`)
+	// commandIndexes := lineCheck.FindAllString(string(byt), -1)
+	nlCheck, _ := regexp.Compile("\n")
+	listOfNls := nlCheck.FindAllStringSubmatchIndex(string(byt), -1)
+	fmt.Println(len(listOfNls))
+	linesOfDocument := make(map[int]string)
+	for i, a := range listOfNls {
+		if i < 1 {
+			linesOfDocument[i] = string(byt)[:a[0]]
+		} else {
+			linesOfDocument[i] = string(byt)[listOfNls[i-1][1]:a[0]]
+		}
+		if i == len(listOfNls)-1 {
+			linesOfDocument[i+1] = string(byt)[a[1]:]
+		}
 	}
+	// commandCheck, _ := regexp.Compile("^(-n|-a)")
+	// byCommand := commandCheck.FindAll(byt, -1)
+	// fmt.Println(len(byCommand))
+	// for _, a := range byCommand {
+	// 	fmt.Println(a)
+	// }
 }
 func enterArg() string {
 	u := ""
@@ -147,9 +169,6 @@ func updateFile(fileName string, content ...[]byte) {
 }
 func plainSwchGenerator(fileContent []byte) []byte { 
 	check, _ := regexp.Compile("\n")
-	// nlArr := 
-	// check.FindAllStringSubmatchIndex(string(fileContent), 
-	// -1)
 	for c := 0; c < len(check.FindAllStringSubmatchIndex(string(fileContent), -1)); c++ {
 		nlArr := check.FindAllStringSubmatchIndex(string(fileContent), -1)
 		var cv []byte
