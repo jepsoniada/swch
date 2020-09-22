@@ -1,13 +1,14 @@
-// wert gen (sorce = file name String) - generates 
-// file based on /sorce/ file; that would look like 
-// "*name*.swch" (file = file name String) - makes 
+// wert gen (sorce = file name String) - generates
+// file based on /sorce/ file; that would look like
+// "*name*.swch" (file = file name String) - makes
 // changes in /file/ acording to "*fileName*.swch"
 //  wert (^(-a|-n) \d :: .*)
 package main
-import  (
+
+import (
 	"fmt"
 	"os"
-	"path/filepath" 
+	"path/filepath"
 	"regexp"
 )
 
@@ -19,7 +20,7 @@ import  (
 //}
 
 type SimplifiedLine struct {
-	content string 
+	content string
 }
 
 type simfileinfos interface {
@@ -41,121 +42,150 @@ func (sf SimplifiedLine) line() string {
 
 func main() {
 	args := os.Args[1:]
-	fmt.Println(args) 
-	checkargs: 
+	fmt.Println(args)
+checkargs:
 	switch args[0] {
-		default:
-			var files []string 
+	default:
+		var files []string
+		filepath.Walk(".", func(path string, _ os.FileInfo, _ error) error {
+			files = append(files, path)
+			return nil
+		})
+		check, _ := regexp.Compile(".+[.]")
+		executiveName := args[0][:check.FindStringIndex(args[0])[1]] + "swch"
+		acc := 0
+		fin := false
+		for _, a := range files {
+			if a == executiveName {
+				fin = true
+			}
+			if a != args[0] {
+				acc++
+			}
+		}
+		if acc == len(files)-1 && fin {
+			swch(args[0])
+		}
+		if acc == len(files) {
+			fmt.Println("not file, sorry ::((")
+		} else if !fin {
+			u := ""
+			fmt.Println("executive to this file doesn't exist")
+			fmt.Println("should i generate it? (y/n)")
+			fmt.Scanln(&u)
+			if u == "y" {
+				createSwchFile(args[0])
+			}
+		}
+	case "generate", "gen":
+		if len(args) > 1 {
+			check, _ := regexp.Compile(".+[.]")
+			filename := args[1][:check.FindStringIndex(args[1])[1]] + "swch"
+			var files []string
 			filepath.Walk(".", func(path string, _ os.FileInfo, _ error) error {
 				files = append(files, path)
 				return nil
 			})
-			check, _ := regexp.Compile(".+[.]") 
-			executiveName := args[0][:check.FindStringIndex(args[0])[1]] + "swch"
 			acc := 0
-			fin := false
 			for _, a := range files {
-				if a == executiveName {
-					fin = true
+				if filename == a {
+					u := ""
+					fmt.Println("this file already exists")
+					fmt.Println("should i overwrite this? (y/n): ")
+					fmt.Scanln(&u)
+					if u == "y" {
+						updateFile(args[1])
+					}
+					goto skip
 				}
-				if a != args[0] { 
+			}
+			for _, a := range files {
+				if a != args[1] {
 					acc++
 				}
 			}
-			if acc == len(files) -1 && fin {
-				swch(args[0])
-			}
-			if acc == len(files) { 
-				fmt.Println("not file, sorry ::((")
-			} else if !fin {
-				u := "" 
-				fmt.Println("executive to this file doesn't exist") 
-				fmt.Println("should i generate it? (y/n)") 
-				fmt.Scanln(&u)
-				if u == "y" {
-					createSwchFile(args[0])
-				}
-			}
-		case "generate", "gen":
-			if len(args) > 1 {
-				check, _ := regexp.Compile(".+[.]") 
-				filename := args[1][:check.FindStringIndex(args[1])[1]] + "swch"
-				var files []string 
-				filepath.Walk(".", func(path string, _ os.FileInfo, _ error) error {
-					files = append(files, path)
-					return nil
-				})
-				acc := 0
-				for _, a := range files {
-					if filename == a {
-						u := "" 
-						fmt.Println("this file already exists") 
-						fmt.Println("should i overwrite this? (y/n): ") 
-						fmt.Scanln(&u) 
-						if u == "y" {
-							updateFile(args[1])
-						}
-						goto skip
-					}
-				}
-				for _, a := range files {
-					if a != args[1] {
-						acc++
-					}
-				}
-				if acc < len(files) { 
-					createSwchFile(args[1])
-				} else {
-					args[1] = enterArg() 
-					goto checkargs
-				}
-				skip:
+			if acc < len(files) {
+				createSwchFile(args[1])
 			} else {
-				var files []string 
-				filepath.Walk(".", func(path string, _ os.FileInfo, _ error) error {
-					files = append(files, path)
-					return nil
-				})
-				arg := enterArg()
-				for _, a := range files {
-					if arg == a { 
-						args = append(args, a)
-					}
-				}
+				args[1] = enterArg()
 				goto checkargs
 			}
+		skip:
+		} else {
+			var files []string
+			filepath.Walk(".", func(path string, _ os.FileInfo, _ error) error {
+				files = append(files, path)
+				return nil
+			})
+			arg := enterArg()
+			for _, a := range files {
+				if arg == a {
+					args = append(args, a)
+				}
+			}
+			goto checkargs
+		}
 	}
 }
-func swch (fileName string) {
+func swch(fileName string) {
 	check, _ := regexp.Compile(".+[.]")
 	executive := fileName[:check.FindStringIndex(fileName)[1]] + "swch"
-	qwe, _ := os.OpenFile(executive, os.O_RDWR, 0666)
-	qwei, _ := qwe.Stat()
-	byt := make([]byte, qwei.Size())
-	qwe.Read(byt)
-	fmt.Printf("%s", string(byt))
-	// lineCheck, _ := regexp.Compile(`^(-n|-a) \d* :: .*`)
-	// commandIndexes := lineCheck.FindAllString(string(byt), -1)
 	nlCheck, _ := regexp.Compile("\n")
-	listOfNls := nlCheck.FindAllStringSubmatchIndex(string(byt), -1)
-	fmt.Println(len(listOfNls))
-	linesOfDocument := make(map[int]SimplifiedLine)
-	for i, a := range listOfNls {
+	executiveFile, _ := os.OpenFile(executive, os.O_RDWR, 0666)
+	exeFileInfo, _ := executiveFile.Stat()
+	executiveContent := make([]byte, exeFileInfo.Size())
+	executiveFile.Read(executiveContent)
+	listOfExecNls := nlCheck.FindAllStringSubmatchIndex(string(executiveContent), -1)
+	linesOfExecutive := make(map[int]SimplifiedLine)
+	for i, a := range listOfExecNls {
 		if i < 1 {
-			linesOfDocument[i] = SimplifiedLine{string(byt)[:a[0]]}
+			linesOfExecutive[i] = SimplifiedLine{string(executiveContent)[:a[0]]}
 		} else {
-			linesOfDocument[i] = SimplifiedLine{string(byt)[listOfNls[i-1][1]:a[0]]}
+			linesOfExecutive[i] = SimplifiedLine{string(executiveContent)[listOfExecNls[i-1][1]:a[0]]}
 		}
-		if i == len(listOfNls)-1 {
-			linesOfDocument[i+1] = SimplifiedLine{string(byt)[a[1]:]}
+		if i == len(listOfExecNls)-1 {
+			linesOfExecutive[i+1] = SimplifiedLine{string(executiveContent)[a[1]:]}
 		}
 	}
-	// commandCheck, _ := regexp.Compile("^(-n|-a)")
-	// byCommand := commandCheck.FindAll(byt, -1)
-	// fmt.Println(len(byCommand))
-	// for _, a := range byCommand {
-	// 	fmt.Println(a)
-	// }
+	originFile, _ := os.OpenFile(fileName, os.O_RDWR, 0666)
+	origFileInfo, _ := originFile.Stat()
+	originContent := make([]byte, origFileInfo.Size())
+	originFile.Read(originContent)
+	//fmt.Println(string(originContent))
+	listOfOrigNls := nlCheck.FindAllStringSubmatchIndex(string(originContent), -1)
+	fmt.Println(listOfOrigNls)
+	var linesOfOrigin []string
+	fmt.Println(len(listOfOrigNls))
+	for i, a := range listOfOrigNls {
+	//	fmt.Println(string(originContent), i)
+		if i < 1 {
+			linesOfOrigin = append(linesOfOrigin, string(originContent)[0:a[0]])
+	//		fmt.Println(string(originContent)[:a[0]])
+		} else {
+			linesOfOrigin = append(linesOfOrigin, string(originContent)[listOfOrigNls[i-1][1]:a[0]])
+	//		fmt.Println(string(originContent)[listOfOrigNls[i-1][1]:a[0]])
+		}
+		if i == len(listOfOrigNls)-1 {
+			linesOfOrigin = append(linesOfOrigin, string(originContent)[a[1]:])
+	//		fmt.Println(string(originContent)[a[1]:])
+		}
+		fmt.Println(linesOfOrigin)
+		fmt.Println()
+	}
+	for i := 0; i < 5; i++ {
+		fmt.Println(linesOfExecutive[i])
+	}
+	for _, a := range linesOfExecutive {
+		e, _ := regexp.MatchString(`^-(a|n) \d :: .*`, a.content)
+		if e {
+			switch a.task() {
+				case "n":
+					fmt.Println("n"+"n")
+				case "a":
+					fmt.Println("a"+"a")
+			}
+		}
+	}
 }
 func enterArg() string {
 	u := ""
@@ -169,26 +199,27 @@ func enterArg() string {
 	}
 	return u
 }
+
 // only one content arg per call
-func updateFile(fileName string, content ...[]byte) { 
-	check, _ := regexp.Compile(".+[.]") 
+func updateFile(fileName string, content ...[]byte) {
+	check, _ := regexp.Compile(".+[.]")
 	executiveName := fileName[:check.FindStringIndex(fileName)[1]] + "swch"
-	executive, _ := os.OpenFile(executiveName, os.O_RDWR, 0666) 
+	executive, _ := os.OpenFile(executiveName, os.O_RDWR, 0666)
 	entrydata, _ := os.OpenFile(fileName, os.O_RDWR, 0666)
 	entrydataInfo, _ := entrydata.Stat()
 	if len(content) < 1 {
-		contentFromEntry := make([]byte, entrydataInfo.Size()) 
-		entrydata.Read(contentFromEntry) 
+		contentFromEntry := make([]byte, entrydataInfo.Size())
+		entrydata.Read(contentFromEntry)
 		fmt.Println(contentFromEntry)
-		a := plainSwchGenerator(contentFromEntry) 
+		a := plainSwchGenerator(contentFromEntry)
 		executive.Write(a)
-		fmt.Println(a) 
+		fmt.Println(a)
 		return
 	}
-	executive.Truncate(0) 
+	executive.Truncate(0)
 	executive.Write(content[0])
 }
-func plainSwchGenerator(fileContent []byte) []byte { 
+func plainSwchGenerator(fileContent []byte) []byte {
 	check, _ := regexp.Compile("\n")
 	for c := 0; c < len(check.FindAllStringSubmatchIndex(string(fileContent), -1)); c++ {
 		nlArr := check.FindAllStringSubmatchIndex(string(fileContent), -1)
@@ -197,18 +228,18 @@ func plainSwchGenerator(fileContent []byte) []byte {
 			cv = append([]byte(fmt.Sprint("-n ", c, " :: ")))
 		}
 		cv = append(cv, fileContent[:nlArr[c][0]]...)
-		a := append(cv, []byte(fmt.Sprint("\n", "-n ", c + 1, " :: "))...)
-		b := append(a, fileContent[nlArr[c][1]:]...) 
+		a := append(cv, []byte(fmt.Sprint("\n", "-n ", c+1, " :: "))...)
+		b := append(a, fileContent[nlArr[c][1]:]...)
 		fileContent = b
 	}
 	return fileContent
 }
 func createSwchFile(fileName string) {
 	entrydata, _ := os.OpenFile(fileName, os.O_RDWR, 0666)
-	entrydataInfo, _ := entrydata.Stat() 
+	entrydataInfo, _ := entrydata.Stat()
 	fmt.Println("here", entrydataInfo)
-	byt := make([]byte, entrydataInfo.Size()) 
-    	entrydata.Read(byt)
+	byt := make([]byte, entrydataInfo.Size())
+	entrydata.Read(byt)
 	entrydata.Close()
 	byt = plainSwchGenerator(byt)
 	check, _ := regexp.Compile(".+[.]")
