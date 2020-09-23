@@ -29,7 +29,7 @@ type simfileinfos interface {
 }
 
 func (sf SimplifiedLine) task() string {
-	check, _ := regexp.Compile("^-(a|n)")
+	check, _ := regexp.Compile("^-(a|n|r)")
 	typeOfTask := check.FindStringSubmatch(sf.content)
 	return string(typeOfTask[1])
 }
@@ -175,17 +175,24 @@ func swch(fileName string) {
 	for i := 0; i < 5; i++ {
 		fmt.Println(linesOfExecutive[i])
 	}
-	for _, a := range linesOfExecutive {
-		e, _ := regexp.MatchString(`^-(a|n) \d :: .*`, a.content)
+	buffOfInputFile := ""
+	for i := len(linesOfExecutive)-1; i >= 0; i-- {
+		e, _ := regexp.MatchString(`^-(a|n|r) \d :: .*`, linesOfExecutive[i].content)
 		if e {
-			switch a.task() {
+			switch linesOfExecutive[i].task() {
 				case "n":
-					fmt.Println("n"+"n")
+					buffOfInputFile = linesOfExecutive[i].line() + "\n" + buffOfInputFile
 				case "a":
 					fmt.Println("a"+"a")
+				case "r":
+					if linesOfExecutive[i].line() != linesOfOrigin[i] {
+						buffOfInputFile = linesOfExecutive[i].line() + "\n" + buffOfInputFile
+					}
 			}
 		}
 	}
+	originFile.Truncate(0)
+	originFile.Write([]byte(buffOfInputFile))
 }
 func enterArg() string {
 	u := ""
@@ -244,6 +251,7 @@ func createSwchFile(fileName string) {
 	byt = plainSwchGenerator(byt)
 	check, _ := regexp.Compile(".+[.]")
 	filename := entrydataInfo.Name()[:check.FindStringIndex(entrydataInfo.Name())[1]] + "swch"
+
 	// koe = koe[:dotindex]
 	genfile, _ := os.Create(filename)
 	// os.Create(filename)
