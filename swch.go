@@ -12,7 +12,7 @@ import (
 	"regexp"
 )
 
-type SimplifiedLine struct {
+type simplifiedLine struct {
 	content string
 }
 
@@ -21,13 +21,13 @@ type simfileinfos interface {
 	line() string
 }
 
-func (sf SimplifiedLine) task() string {
+func (sf simplifiedLine) task() string {
 	check, _ := regexp.Compile("^-(a|n|r)")
 	typeOfTask := check.FindStringSubmatch(sf.content)
 	return string(typeOfTask[1])
 }
 
-func (sf SimplifiedLine) line() string {
+func (sf simplifiedLine) line() string {
 	check, _ := regexp.Compile(" :: (.*)")
 	line := check.FindStringSubmatch(sf.content)
 	return line[1]
@@ -38,26 +38,28 @@ func main() {
 	fmt.Println(args)
 checkargs:
 	switch args[0] {
-	default:
+	case "b", "build":
 		var files []string
 		filepath.Walk(".", func(path string, _ os.FileInfo, _ error) error {
 			files = append(files, path)
 			return nil
 		})
 		check, _ := regexp.Compile(".+[.]")
-		executiveName := args[0][:check.FindStringIndex(args[0])[1]] + "swch"
+		fmt.Println(check.FindStringIndex(args[1]))
+		executiveName := args[1][:check.FindStringIndex(args[1])[1]] + "swch"
+		fmt.Println(executiveName, args[1])
 		acc := 0
 		fin := false
 		for _, a := range files {
 			if a == executiveName {
 				fin = true
 			}
-			if a != args[0] {
+			if a != args[1] {
 				acc++
 			}
 		}
 		if acc == len(files)-1 && fin {
-			swch(args[0])
+			swch(args[1], true)
 		}
 		if acc == len(files) {
 			fmt.Println("not file, sorry ::((")
@@ -67,10 +69,42 @@ checkargs:
 			fmt.Println("should i generate it? (y/n)")
 			fmt.Scanln(&u)
 			if u == "y" {
-				createSwchFile(args[0])
+				createSwchFile(args[1])
 			}
 		}
-	case "generate", "gen":
+	case "d", "dev":
+		var files []string
+		filepath.Walk(".", func(path string, _ os.FileInfo, _ error) error {
+			files = append(files, path)
+			return nil
+		})
+		check, _ := regexp.Compile(".+[.]")
+		executiveName := args[1][:check.FindStringIndex(args[1])[1]] + "swch"
+		acc := 0
+		fin := false
+		for _, a := range files {
+			if a == executiveName {
+				fin = true
+			}
+			if a != args[1] {
+				acc++
+			}
+		}
+		if acc == len(files)-1 && fin {
+			swch(args[1], false)
+		}
+		if acc == len(files) {
+			fmt.Println("not file, sorry ::((")
+		} else if !fin {
+			u := ""
+			fmt.Println("executive to this file doesn't exist")
+			fmt.Println("should i generate it? (y/n)")
+			fmt.Scanln(&u)
+			if u == "y" {
+				createSwchFile(args[1])
+			}
+		}
+	case "gen", "generate":
 		if len(args) > 1 {
 			check, _ := regexp.Compile(".+[.]")
 			filename := args[1][:check.FindStringIndex(args[1])[1]] + "swch"
@@ -120,7 +154,7 @@ checkargs:
 		}
 	}
 }
-func swch(fileName string) {
+func swch(fileName string, build bool) {
 	check, _ := regexp.Compile(".+[.]")
 	executive := fileName[:check.FindStringIndex(fileName)[1]] + "swch"
 	nlCheck, _ := regexp.Compile("\n")
@@ -130,22 +164,21 @@ func swch(fileName string) {
 	executiveFile.Read(executiveContent)
 	executiveFile.Close()
 	listOfExecNls := nlCheck.FindAllStringSubmatchIndex(string(executiveContent), -1)
-	linesOfExecutive := make(map[int]SimplifiedLine)
+	linesOfExecutive := make(map[int]simplifiedLine)
 	for i, a := range listOfExecNls {
 		if i < 1 {
-			linesOfExecutive[i] = SimplifiedLine{string(executiveContent)[:a[0]]}
+			linesOfExecutive[i] = simplifiedLine{string(executiveContent)[:a[0]]}
 		} else {
-			linesOfExecutive[i] = SimplifiedLine{string(executiveContent)[listOfExecNls[i-1][1]:a[0]]}
+			linesOfExecutive[i] = simplifiedLine{string(executiveContent)[listOfExecNls[i-1][1]:a[0]]}
 		}
 		if i == len(listOfExecNls)-1 {
-			linesOfExecutive[i+1] = SimplifiedLine{string(executiveContent)[a[1]:]}
+			linesOfExecutive[i+1] = simplifiedLine{string(executiveContent)[a[1]:]}
 		}
 	}
 	originFile, _ := os.OpenFile(fileName, os.O_RDWR, 0666)
 	origFileInfo, _ := originFile.Stat()
 	originContent := make([]byte, origFileInfo.Size())
 	originFile.Read(originContent)
-	originFile.Close()
 	listOfOrigNls := nlCheck.FindAllStringSubmatchIndex(string(originContent), -1)
 	fmt.Println(listOfOrigNls)
 	var linesOfOrigin []string
@@ -160,30 +193,41 @@ func swch(fileName string) {
 			linesOfOrigin = append(linesOfOrigin, string(originContent)[a[1]:])
 		}
 	}
-	for _, a := range linesOfOrigin {
-		fmt.Println(a)
-	}
+	// for _, a := range linesOfOrigin {
+	// 	fmt.Println(a)
+	// }
 	for i := 0; i < 5; i++ {
 		fmt.Println(linesOfExecutive[i].content)
 	}
 	buffOfInputFile := ""
-	for i := len(linesOfExecutive)-1; i >= 0; i-- {
+	for i := len(linesOfExecutive) - 1; i >= 0; i-- {
 		e, _ := regexp.MatchString(`^-(a|n|r) \d :: .*`, linesOfExecutive[i].content)
 		if e {
 			switch linesOfExecutive[i].task() {
-				case "n":
+			case "n":
+				if i == len(linesOfExecutive)-1 {
+					buffOfInputFile = linesOfExecutive[i].line()
+				} else {
 					buffOfInputFile = linesOfExecutive[i].line() + "\n" + buffOfInputFile
-				case "a":
-					fmt.Println("a"+"a")
-				case "r":
-					if linesOfExecutive[i].line() != linesOfOrigin[i] {
+				}
+			case "a":
+				fmt.Println("a" + "a")
+			case "r":
+				if !build {
+					if i == len(linesOfExecutive)-1 {
+						buffOfInputFile = linesOfExecutive[i].line()
+					} else {
 						buffOfInputFile = linesOfExecutive[i].line() + "\n" + buffOfInputFile
 					}
+				}
 			}
 		}
 	}
+	fmt.Println([]byte(buffOfInputFile))
+	fmt.Println(originContent)
 	originFile.Truncate(0)
-	originFile.Write([]byte(buffOfInputFile))
+	originFile.WriteAt([]byte(buffOfInputFile), 0)
+	originFile.Close()
 }
 func enterArg() string {
 	u := ""
