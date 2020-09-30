@@ -17,8 +17,8 @@ swch files are used for editing original file by simple commands
 ### swch syntax
 basic example for swch file would look like this:
 ```log
-    -n 0 :: foo
-    -r 1 :: qwe
+-n 0 :: foo
+-r 1 :: qwe
 ```
 "-n" and "-r" are tasks; these defines what should be done to specific lines; digit, :: and "foo" in first line are identificator that tells which line should be mutated by task and what this line stores
 
