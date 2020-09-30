@@ -12,13 +12,6 @@ import (
 	"regexp"
 )
 
-//type SimplifiedLine struct {
-//	line,
-//	task,
-//	content string
-//	numOfLine int
-//}
-
 type SimplifiedLine struct {
 	content string
 }
@@ -135,6 +128,7 @@ func swch(fileName string) {
 	exeFileInfo, _ := executiveFile.Stat()
 	executiveContent := make([]byte, exeFileInfo.Size())
 	executiveFile.Read(executiveContent)
+	executiveFile.Close()
 	listOfExecNls := nlCheck.FindAllStringSubmatchIndex(string(executiveContent), -1)
 	linesOfExecutive := make(map[int]SimplifiedLine)
 	for i, a := range listOfExecNls {
@@ -151,29 +145,26 @@ func swch(fileName string) {
 	origFileInfo, _ := originFile.Stat()
 	originContent := make([]byte, origFileInfo.Size())
 	originFile.Read(originContent)
-	//fmt.Println(string(originContent))
+	originFile.Close()
 	listOfOrigNls := nlCheck.FindAllStringSubmatchIndex(string(originContent), -1)
 	fmt.Println(listOfOrigNls)
 	var linesOfOrigin []string
 	fmt.Println(len(listOfOrigNls))
 	for i, a := range listOfOrigNls {
-	//	fmt.Println(string(originContent), i)
 		if i < 1 {
 			linesOfOrigin = append(linesOfOrigin, string(originContent)[0:a[0]])
-	//		fmt.Println(string(originContent)[:a[0]])
 		} else {
 			linesOfOrigin = append(linesOfOrigin, string(originContent)[listOfOrigNls[i-1][1]:a[0]])
-	//		fmt.Println(string(originContent)[listOfOrigNls[i-1][1]:a[0]])
 		}
 		if i == len(listOfOrigNls)-1 {
 			linesOfOrigin = append(linesOfOrigin, string(originContent)[a[1]:])
-	//		fmt.Println(string(originContent)[a[1]:])
 		}
-		fmt.Println(linesOfOrigin)
-		fmt.Println()
+	}
+	for _, a := range linesOfOrigin {
+		fmt.Println(a)
 	}
 	for i := 0; i < 5; i++ {
-		fmt.Println(linesOfExecutive[i])
+		fmt.Println(linesOfExecutive[i].content)
 	}
 	buffOfInputFile := ""
 	for i := len(linesOfExecutive)-1; i >= 0; i-- {
@@ -225,6 +216,8 @@ func updateFile(fileName string, content ...[]byte) {
 	}
 	executive.Truncate(0)
 	executive.Write(content[0])
+	executive.Close()
+	entrydata.Close()
 }
 func plainSwchGenerator(fileContent []byte) []byte {
 	check, _ := regexp.Compile("\n")
@@ -251,9 +244,7 @@ func createSwchFile(fileName string) {
 	byt = plainSwchGenerator(byt)
 	check, _ := regexp.Compile(".+[.]")
 	filename := entrydataInfo.Name()[:check.FindStringIndex(entrydataInfo.Name())[1]] + "swch"
-
-	// koe = koe[:dotindex]
 	genfile, _ := os.Create(filename)
-	// os.Create(filename)
 	genfile.Write(byt)
+	entrydata.Close()
 }
