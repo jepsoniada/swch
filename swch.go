@@ -200,6 +200,7 @@ func swch(fileName string, build bool) {
 		fmt.Println(linesOfExecutive[i].content)
 	}
 	buffOfInputFile := ""
+	var checkLater []string
 	for i := len(linesOfExecutive) - 1; i >= 0; i-- {
 		e, _ := regexp.MatchString(`^-(a|n|r) \d :: .*`, linesOfExecutive[i].content)
 		if e {
@@ -212,6 +213,20 @@ func swch(fileName string, build bool) {
 				}
 			case "a":
 				fmt.Println("a" + "a")
+				if build {
+					for _, a := range checkLater {
+						if i == len(linesOfExecutive)-1 {
+							buffOfInputFile = a
+						} else {
+							buffOfInputFile = a + "\n" + buffOfInputFile
+						}
+					}
+				}
+				if i == len(linesOfExecutive)-1 {
+					buffOfInputFile = linesOfExecutive[i].line()
+				} else {
+					buffOfInputFile = linesOfExecutive[i].line() + "\n" + buffOfInputFile
+				}
 			case "r":
 				if !build {
 					if i == len(linesOfExecutive)-1 {
@@ -221,6 +236,8 @@ func swch(fileName string, build bool) {
 					}
 				}
 			}
+		} else if a, _ := regexp.MatchString(`^\s.*`, linesOfExecutive[i].content); a {
+			checkLater = append([]string{linesOfExecutive[i].content}, checkLater...)
 		}
 	}
 	fmt.Println([]byte(buffOfInputFile))
