@@ -1,10 +1,10 @@
 # SWCH
 
-## Indroducion
+## Introduction
 
 swch is tool for switching between dev and build file by makeing changes in selected file
 
-## Instalation
+## Installation
 
 download swch.go file and compile it with [go cli](https://golang.org/dl/)
 

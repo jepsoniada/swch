@@ -249,7 +249,7 @@ func swch(fileName string, build bool) {
 func enterArg() string {
 	u := ""
 	fmt.Println("problem with base arg")
-	fmt.Print("on which document shoud it be based: ")
+	fmt.Print("on which document should it be based: ")
 	fmt.Scanln(&u)
 	if len(u) < 1 {
 		enterArg()
