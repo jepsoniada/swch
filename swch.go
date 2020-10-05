@@ -201,9 +201,11 @@ func swch(fileName string, build bool) {
 	}
 	buffOfInputFile := ""
 	var checkLater []string
+	isArg, _ := regexp.Compile(`^\s(.*)`)
 	for i := len(linesOfExecutive) - 1; i >= 0; i-- {
-		e, _ := regexp.MatchString(`^-(a|n|r) \d :: .*`, linesOfExecutive[i].content)
-		if e {
+		a := isArg.FindStringSubmatch(linesOfExecutive[i].content)
+		fmt.Println("useful info", "ondex", i, "data", a)
+		if e, _ := regexp.MatchString(`^-(a|n|r) \d :: .*`, linesOfExecutive[i].content); e {
 			switch linesOfExecutive[i].task() {
 			case "n":
 				if i == len(linesOfExecutive)-1 {
@@ -236,8 +238,8 @@ func swch(fileName string, build bool) {
 					}
 				}
 			}
-		} else if a, _ := regexp.MatchString(`^\s.*`, linesOfExecutive[i].content); a {
-			checkLater = append([]string{linesOfExecutive[i].content}, checkLater...)
+		} else if len(a) > 0 {
+			checkLater = append([]string{a[1]}, checkLater...)
 		}
 	}
 	fmt.Println([]byte(buffOfInputFile))
