@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"log"
 )
 
 type simplifiedLine struct {
@@ -44,9 +45,7 @@ checkargs:
 			files = append(files, path)
 			return nil
 		})
-		check, _ := regexp.Compile(".+[.]")
-		fmt.Println(check.FindStringIndex(args[1]))
-		executiveName := args[1][:check.FindStringIndex(args[1])[1]] + "swch"
+		executiveName := args[1] + ".swch"
 		fmt.Println(executiveName, args[1])
 		acc := 0
 		fin := false
@@ -78,8 +77,7 @@ checkargs:
 			files = append(files, path)
 			return nil
 		})
-		check, _ := regexp.Compile(".+[.]")
-		executiveName := args[1][:check.FindStringIndex(args[1])[1]] + "swch"
+		executiveName := args[1] + ".swch"
 		acc := 0
 		fin := false
 		for _, a := range files {
@@ -106,8 +104,7 @@ checkargs:
 		}
 	case "gen", "generate":
 		if len(args) > 1 {
-			check, _ := regexp.Compile(".+[.]")
-			filename := args[1][:check.FindStringIndex(args[1])[1]] + "swch"
+			filename := args[1] + ".swch"
 			var files []string
 			filepath.Walk(".", func(path string, _ os.FileInfo, _ error) error {
 				files = append(files, path)
@@ -155,8 +152,7 @@ checkargs:
 	}
 }
 func swch(fileName string, build bool) {
-	check, _ := regexp.Compile(".+[.]")
-	executive := fileName[:check.FindStringIndex(fileName)[1]] + "swch"
+	executive := fileName + ".swch"
 	nlCheck, _ := regexp.Compile("\n")
 	executiveFile, _ := os.OpenFile(executive, os.O_RDWR, 0666)
 	exeFileInfo, _ := executiveFile.Stat()
@@ -196,14 +192,16 @@ func swch(fileName string, build bool) {
 	// for _, a := range linesOfOrigin {
 	// 	fmt.Println(a)
 	// }
-	for i := 0; i < 5; i++ {
+	for i, _ := range linesOfExecutive {
 		fmt.Println(linesOfExecutive[i].content)
 	}
+	fmt.Println()
 	buffOfInputFile := ""
 	var checkLater []string
+	isArg, _ := regexp.Compile(`^\s(.*)`)
 	for i := len(linesOfExecutive) - 1; i >= 0; i-- {
-		e, _ := regexp.MatchString(`^-(a|n|r) \d :: .*`, linesOfExecutive[i].content)
-		if e {
+		a := isArg.FindStringSubmatch(linesOfExecutive[i].content)
+		if e, _ := regexp.MatchString(`^-(a|n|r) \d :: .*`, linesOfExecutive[i].content); e {
 			switch linesOfExecutive[i].task() {
 			case "n":
 				if i == len(linesOfExecutive)-1 {
@@ -214,6 +212,9 @@ func swch(fileName string, build bool) {
 			case "a":
 				fmt.Println("a" + "a")
 				if build {
+					if len(checkLater) == 0 {
+						log.Fatal(fmt.Sprint("no args at ", i))
+					}
 					for _, a := range checkLater {
 						if i == len(linesOfExecutive)-1 {
 							buffOfInputFile = a
@@ -236,8 +237,11 @@ func swch(fileName string, build bool) {
 					}
 				}
 			}
-		} else if a, _ := regexp.MatchString(`^\s.*`, linesOfExecutive[i].content); a {
-			checkLater = append([]string{linesOfExecutive[i].content}, checkLater...)
+		} else if len(a) > 0 {
+			checkLater = append([]string{a[1]}, checkLater...)
+		} else if linesOfExecutive[i].content != "" {
+			fmt.Println("y ",linesOfExecutive[i].content)
+			log.Fatal(fmt.Sprint("syntax error in line", i))
 		}
 	}
 	fmt.Println([]byte(buffOfInputFile))
@@ -261,8 +265,7 @@ func enterArg() string {
 
 // only one content arg per call
 func updateFile(fileName string, content ...[]byte) {
-	check, _ := regexp.Compile(".+[.]")
-	executiveName := fileName[:check.FindStringIndex(fileName)[1]] + "swch"
+	executiveName := fileName + ".swch"
 	executive, _ := os.OpenFile(executiveName, os.O_RDWR, 0666)
 	entrydata, _ := os.OpenFile(fileName, os.O_RDWR, 0666)
 	entrydataInfo, _ := entrydata.Stat()
@@ -303,8 +306,7 @@ func createSwchFile(fileName string) {
 	entrydata.Read(byt)
 	entrydata.Close()
 	byt = plainSwchGenerator(byt)
-	check, _ := regexp.Compile(".+[.]")
-	filename := entrydataInfo.Name()[:check.FindStringIndex(entrydataInfo.Name())[1]] + "swch"
+	filename := entrydataInfo.Name() + ".swch"
 	genfile, _ := os.Create(filename)
 	genfile.Write(byt)
 	entrydata.Close()
