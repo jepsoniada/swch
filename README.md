@@ -28,7 +28,6 @@ args is passed only to specific tasks (like -a); they are defined by single wide
 ```log
 -a 0 :: foo
 	baz
- jd
 ```
 
 **tasks:**
