@@ -2,7 +2,7 @@
 // file based on /sorce/ file; that would look like
 // "*name*.swch" (file = file name String) - makes
 // changes in /file/ acording to "*fileName*.swch"
-//  wert (^(-a|-n) \d :: .*)
+//  wert (^(-a|-n) \d :: .*) 
 package main
 
 import (
